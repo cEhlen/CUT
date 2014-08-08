@@ -89,7 +89,7 @@ public:
             reporter.ReportAssert("", true);
         } else {
             std::strstream str;
-            str << "Assertion Error: Expeted " << result << " to be EQUAL " <<  expected;
+            str << "Assertion Error: Expected " << result << " to be EQUAL " <<  expected;
             reporter.ReportAssert(str.str(), false);
         }
     }
@@ -102,7 +102,7 @@ public:
             reporter.ReportAssert("", true);
         } else {
             std::strstream str;
-            str << "Assertion Error: Expeted " << result << " to be ALMOST_EQUAL " <<  expected << " with a precision of " << places << " places";
+            str << "Assertion Error: Expected " << result << " to be ALMOST_EQUAL " <<  expected << " with a precision of " << places << " places";
             reporter.ReportAssert(str.str(), false);
         }
     }
