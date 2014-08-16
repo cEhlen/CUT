@@ -11,18 +11,22 @@
 
 #include <strstream>
 #include <iostream>
+#include <exception>
+#include <stack>
 #include <cmath>
 
-#define DESCRIBE(X, Y) assert.describe((#X), [&assert] () Y)
+#define DESCRIBE(X, Y) assert.describe((#X), [&] () Y)
+#define BEFORE_EACH(X) assert.pushBeforeEach([&] () {X;})
+#define AFTER_EACH(X) assert.pushAfterEach([&] () {X;})
 
-#define IT(X, Y) assert.it((#X), [&assert] () Y)
+#define IT(X, Y) assert.it((#X), [&] () Y)
 
 #define TEST(X) int main(int argc, const char* argv[]) {\
 CUT::TestSuite assert; \
 X }
 
 namespace CUT {
-
+    
 class Reporter {
     int m_indent;
     bool m_newlineNeeded;
@@ -68,19 +72,51 @@ public:
     
 class TestSuite {
     Reporter reporter;
+    std::stack<std::function<void()>> m_beforeStack;
+    std::stack<std::function<void()>> m_afterStack;
+    bool m_beforeEachSet;
+    bool m_afterEachSet;
+    
 public:
+    TestSuite() {
+        m_beforeStack.push([&]{});
+        m_afterStack.push([&]{});
+        m_beforeEachSet = false;
+        m_afterEachSet = false;
+    }
+    
     template <typename Functor>
     void describe(const std::string& name, Functor functor) {
         reporter.ReportDescribe(name);
+        m_beforeEachSet = false;
+        m_afterEachSet = false;
         functor();
+        if (m_beforeEachSet)
+            m_beforeStack.pop();
+        if (m_afterEachSet)
+            m_afterStack.pop();
         reporter.End();
     }
     
     template <typename Functor>
     void it(const std::string& description, Functor functor) {
         reporter.ReportIt(description);
+        m_beforeStack.top()();
         functor();
+        m_afterStack.top()();
         reporter.End();
+    }
+    
+    template <typename Functor>
+    void pushBeforeEach(Functor functor) {
+        m_beforeEachSet = true;
+        m_beforeStack.push(functor);
+    }
+    
+    template <typename Functor>
+    void pushAfterEach(Functor functor) {
+        m_afterEachSet = true;
+        m_afterStack.push(functor);
     }
     
     template<typename T>
